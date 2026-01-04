@@ -45,12 +45,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <button
-          onClick={logout}
-          className="px-5 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition"
-        >
-          Logout
-        </button>
+      
       </motion.div>
 
       {/* Stats Cards */}
