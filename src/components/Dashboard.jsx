@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-
+import MasteryHeatmap from "./MasteryHeatMap";
 const Dashboard = ({ metrics }) => {
   if (!metrics) return null;
 
@@ -14,15 +14,10 @@ const Dashboard = ({ metrics }) => {
     topicAnalysis,
   } = metrics;
 
-  // 🔹 Helper: detect if unseen is never attempted
-  const unseenNeverTested =
-    accUnseen === 0 &&
-    topicAnalysis.every((t) => t.unseenAcc === 0);
-
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
-      {/* HEADER */}
+      {/* Header */}
       <motion.div
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -37,46 +32,27 @@ const Dashboard = ({ metrics }) => {
         </p>
       </motion.div>
 
-      {/* MAIN METRICS */}
+      {/* 🔹 MAIN METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <MetricCard
-          title="Practiced Accuracy"
-          value={`${accPracticed.toFixed(1)}%`}
-          color="from-blue-500 to-blue-600"
-        />
+        <MetricCard title="Practiced Accuracy" value={`${accPracticed.toFixed(1)}%`} color="from-blue-500 to-blue-600" />
 
-        <MetricCard
-          title="Unseen Accuracy"
-          value={
-            unseenNeverTested
-              ? "Not Tested"
-              : `${accUnseen.toFixed(1)}%`
-          }
-          color="from-green-500 to-green-600"
-        />
+        <MetricCard title="Unseen Accuracy" value={`${accUnseen.toFixed(1)}%`} color="from-green-500 to-green-600" />
 
-        <MetricCard
-          title="Overfit Gap"
-          value={`${gap.toFixed(1)}%`}
-          color="from-orange-500 to-orange-600"
-        />
+        <MetricCard title="Overfit Gap" value={`${gap.toFixed(1)}%`} color="from-orange-500 to-orange-600" />
 
-        <MetricCard
-          title="Learning Status"
-          value={status}
-          color=""
-          textColor={color}
-        />
+        <MetricCard title="Learning Status" value={status} color="" textColor={color} />
+
       </div>
-
-      {/* FRAGILE TOPICS */}
+     <MasteryHeatmap topicAnalysis={topicAnalysis} />
+      {/* 🔹 FRAGILE TOPICS */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
         className="mt-10 bg-white rounded-2xl shadow-lg p-8"
       >
+
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Fragile Topics (Overfitting Risk)
         </h2>
@@ -87,14 +63,14 @@ const Dashboard = ({ metrics }) => {
           </p>
         ) : (
           <ul className="list-disc pl-6 space-y-2 text-red-600 font-medium">
-            {fragileTopics.map((topic, index) => (
-              <li key={index}>{topic}</li>
+            {fragileTopics.map((t, i) => (
+              <li key={i}>{t}</li>
             ))}
           </ul>
         )}
       </motion.div>
 
-      {/* TOPIC-WISE ANALYSIS */}
+      {/* 🔹 TOPIC-WISE ANALYSIS */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -116,11 +92,7 @@ const Dashboard = ({ metrics }) => {
               </span>
 
               <span className="text-sm text-gray-600">
-                Practiced: {t.practicedAcc.toFixed(1)}% |{" "}
-                Unseen:{" "}
-                {t.unseenAcc === 0 && unseenNeverTested
-                  ? "Not Tested"
-                  : `${t.unseenAcc.toFixed(1)}%`}
+                Practiced: {t.practicedAcc.toFixed(1)}% | Unseen: {t.unseenAcc.toFixed(1)}%
               </span>
             </div>
           ))}
@@ -130,7 +102,6 @@ const Dashboard = ({ metrics }) => {
   );
 };
 
-/* ===== METRIC CARD ===== */
 const MetricCard = ({ title, value, color, textColor }) => (
   <motion.div
     initial={{ opacity: 0, y: 30 }}

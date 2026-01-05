@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, X, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const Practice = ({ questions, onSolve, history }) => {
   const [explanations, setExplanations] = useState({});
@@ -23,9 +23,7 @@ const Practice = ({ questions, onSolve, history }) => {
   // 🔹 Explanation consistency checker
   const analyzeExplanation = (qid, text) => {
     const MIN_LENGTH = 20;
-
     const allExplanations = Object.values(explanations);
-
     let issue = null;
 
     if (text.length < MIN_LENGTH) {
@@ -68,9 +66,11 @@ const Practice = ({ questions, onSolve, history }) => {
                   transition={{ delay: index * 0.05 }}
                   className="bg-white rounded-2xl shadow-sm border p-6"
                 >
-                  {/* QUESTION INFO */}
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 bg-blue-100 text-blue-700">
-                    {q.type || "Pattern Practice"}
+                  {/* CHANGED LABEL: Logic to show "Unseen" or "Practiced" instead of "Pattern Practice" */}
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${
+                    q.isUnseen ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {q.isUnseen ? "Unseen Generalization" : "Practiced Pattern"}
                   </span>
 
                   <h3 className="text-md font-bold text-slate-800">
@@ -85,16 +85,14 @@ const Practice = ({ questions, onSolve, history }) => {
                   {status && (
                     <p
                       className={`mt-2 text-sm font-bold ${
-                        status === "correct"
-                          ? "text-green-600"
-                          : "text-red-600"
+                        status === "correct" ? "text-green-600" : "text-red-600"
                       }`}
                     >
                       {status === "correct" ? "✓ Solved" : "✗ Wrong"}
                     </p>
                   )}
 
-                  {/* 🔥 EXPLANATION INPUT */}
+                  {/* EXPLANATION INPUT */}
                   {status === "correct" && (
                     <div className="mt-4">
                       <label className="text-xs font-bold text-slate-600">
@@ -115,7 +113,6 @@ const Practice = ({ questions, onSolve, history }) => {
                         placeholder="Describe the logic, not the code..."
                       />
 
-                      {/* ⚠️ CONSISTENCY FEEDBACK */}
                       {feedback[q.id] && (
                         <p className="mt-2 flex items-center gap-1 text-xs text-orange-600 font-semibold">
                           <AlertTriangle size={14} />
@@ -129,7 +126,7 @@ const Practice = ({ questions, onSolve, history }) => {
                   <div className="mt-4">
                     <button
                       onClick={() => onSolve(q)}
-                      className="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white"
+                      className="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                     >
                       Solve
                     </button>
