@@ -7,6 +7,7 @@ import Dashboard from "./components/Dashboard";
 import Practice from "./components/Practice";
 import AIInsights from "./components/AIInsights";
 import Sidebar from "./components/Sidebar";
+import StressTestPractice from "./components/StressTestPractice";
 
 import { QUESTIONS } from "./data/mockdata";
 import { calculateOverfitMetrics } from "./utils/Mlengine";
@@ -27,25 +28,29 @@ export default function App() {
 
   if (!user) return <Login />;
 
-  // 🔹 When user clicks Solve
+  // 🔹 Navigate to solve view
   const handleSolve = (question) => {
     setActiveQuestion(question);
     setView("solve");
   };
 
-  // 🔹 When user marks correct / wrong
+  // 🔹 Store attempt (CRITICAL FIX)
   const handleAttempt = (qId, isCorrect) => {
     const question = QUESTIONS.find((q) => q.id === qId);
+    if (!question) return;
 
-    const existing = history.find((h) => h.id === qId);
+    const updated = history.filter((h) => h.id !== qId);
 
-    if (existing && existing.correct === isCorrect) {
-      // reset if same clicked twice
-      setHistory(history.filter((h) => h.id !== qId));
-    } else {
-      const updated = history.filter((h) => h.id !== qId);
-      setHistory([...updated, { ...question, correct: isCorrect }]);
-    }
+    setHistory([
+      ...updated,
+      {
+        id: question.id,
+        title: question.title,
+        topic: question.topic,
+        correct: isCorrect,
+        isUnseen: question.isUnseen === true, // 🔥 THIS FIXES accUnseen
+      },
+    ]);
   };
 
   return (
@@ -68,12 +73,11 @@ export default function App() {
               {view === "solve" && "Solve Question"}
               {view === "gemini" && "AI Insights"}
             </h1>
-
             <p className="text-slate-500 text-sm">
               {view === "prediction" &&
-                "Real-time preparation generalization analysis"}
+                "Rule-based generalization analysis"}
               {view === "questions" &&
-                "Choose diverse problems to avoid overfitting"}
+                "Training vs generalization problem sets"}
             </p>
           </div>
 
@@ -86,7 +90,7 @@ export default function App() {
                   : "border-slate-300 text-slate-500"
               }`}
             >
-              {stressTest ? "Adversarial Mode" : "Standard Mode"}
+              {stressTest ? "Stress Test Mode" : "Practice Mode"}
             </button>
           )}
         </header>
@@ -98,7 +102,9 @@ export default function App() {
         {view === "questions" && (
           <Practice
             questions={
-              stressTest ? QUESTIONS.filter((q) => q.isUnseen) : QUESTIONS
+              stressTest
+                ? QUESTIONS.filter((q) => q.isUnseen === true)
+                : QUESTIONS.filter((q) => q.isUnseen === false)
             }
             history={history}
             onSolve={handleSolve}
@@ -119,7 +125,8 @@ export default function App() {
             </h2>
 
             <p className="text-slate-500 mt-1">
-              {activeQuestion.topic} · {activeQuestion.difficulty}
+              Topic: {activeQuestion.topic} ·{" "}
+              {activeQuestion.isUnseen ? "Unseen" : "Practiced"}
             </p>
 
             <div className="mt-6 bg-white rounded-2xl shadow p-6">
@@ -131,7 +138,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     handleAttempt(activeQuestion.id, true);
-                    setView("questions"); // ✅ GO BACK
+                    setView("questions");
                   }}
                   className="px-5 py-2 bg-green-600 text-white rounded-xl"
                 >
@@ -141,7 +148,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     handleAttempt(activeQuestion.id, false);
-                    setView("questions"); // ✅ GO BACK
+                    setView("questions");
                   }}
                   className="px-5 py-2 bg-red-600 text-white rounded-xl"
                 >
