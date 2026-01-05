@@ -14,7 +14,7 @@ import { calculateOverfitMetrics } from "./utils/Mlengine";
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState("prediction"); // prediction | questions | solve | gemini
+  const [view, setView] = useState("prediction");
   const [history, setHistory] = useState([]);
   const [stressTest, setStressTest] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(null);
@@ -28,34 +28,32 @@ export default function App() {
 
   if (!user) return <Login />;
 
-  // 🔹 Navigate to solve view
   const handleSolve = (question) => {
     setActiveQuestion(question);
     setView("solve");
   };
 
-  // 🔹 Store attempt (CRITICAL FIX)
+  // 🔥 CRITICAL: preserves isUnseen correctly
   const handleAttempt = (qId, isCorrect) => {
     const question = QUESTIONS.find((q) => q.id === qId);
     if (!question) return;
 
-    const updated = history.filter((h) => h.id !== qId);
+    const filtered = history.filter((h) => h.id !== qId);
 
     setHistory([
-      ...updated,
+      ...filtered,
       {
         id: question.id,
         title: question.title,
         topic: question.topic,
         correct: isCorrect,
-        isUnseen: question.isUnseen === true, // 🔥 THIS FIXES accUnseen
+        isUnseen: question.isUnseen,
       },
     ]);
   };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
       <Sidebar
         activeView={view}
         setView={setView}
@@ -63,7 +61,6 @@ export default function App() {
         onLogout={logout}
       />
 
-      {/* Main */}
       <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
         <header className="flex justify-between items-center mb-10">
           <div>
@@ -74,10 +71,8 @@ export default function App() {
               {view === "gemini" && "AI Insights"}
             </h1>
             <p className="text-slate-500 text-sm">
-              {view === "prediction" &&
-                "Rule-based generalization analysis"}
-              {view === "questions" &&
-                "Training vs generalization problem sets"}
+              {view === "prediction" && "Rule-based generalization analysis"}
+              {view === "questions" && "Training vs generalization sets"}
             </p>
           </div>
 
@@ -95,21 +90,35 @@ export default function App() {
           )}
         </header>
 
-        {/* ===== CONTENT ===== */}
+        {/* ===== VIEWS ===== */}
 
         {view === "prediction" && <Dashboard metrics={metrics} />}
 
-        {view === "questions" && (
+        {view === "questions" && !stressTest && (
           <Practice
-            questions={
-              stressTest
-                ? QUESTIONS.filter((q) => q.isUnseen === true)
-                : QUESTIONS.filter((q) => q.isUnseen === false)
-            }
+            questions={QUESTIONS.filter((q) => !q.isUnseen)}
             history={history}
             onSolve={handleSolve}
           />
         )}
+
+        {view === "questions" && (
+  <>
+    <Practice
+      questions={QUESTIONS}   // 🔥 ALWAYS pass all questions
+      history={history}
+      onSolve={handleSolve}
+    />
+
+    <StressTestPractice
+      questions={QUESTIONS}
+      history={history}
+      metrics={metrics}
+      onSolve={handleSolve}
+    />
+  </>
+)}
+
 
         {view === "solve" && activeQuestion && (
           <div className="max-w-4xl">
@@ -131,7 +140,7 @@ export default function App() {
 
             <div className="mt-6 bg-white rounded-2xl shadow p-6">
               <p className="text-slate-700">
-                Solve this problem without relying on memorized patterns.
+                Solve without relying on memorized patterns.
               </p>
 
               <div className="mt-6 flex gap-4">

@@ -3,38 +3,39 @@ import { motion } from "framer-motion";
 import { ShieldAlert } from "lucide-react";
 
 /**
- * Props expected:
- * - questions: all questions
- * - history: attempt history [{ id, correct }]
- * - metrics: { accPracticed, accUnseen }
- * - onSolve: function(q)
+ * Props:
+ * - questions
+ * - history
+ * - metrics
+ * - onSolve
  */
 const StressTestPractice = ({ questions, history, metrics, onSolve }) => {
-  const PRACTICED_THRESHOLD = 80; // X%
-  const UNSEEN_THRESHOLD = 60;    // Y%
+  const PRACTICED_THRESHOLD = 80;
+  const UNSEEN_THRESHOLD = 60;
 
   const [stressMode, setStressMode] = useState(false);
+
+  // 🔹 Always compute safely (NO conditional hooks)
+  const attemptedIds = history.map((h) => h.id);
+
+  const stressQuestions = useMemo(() => {
+    return questions.filter(
+      (q) => q.isUnseen === true && !attemptedIds.includes(q.id)
+    );
+  }, [questions, attemptedIds]);
+
+  // 🔹 Guard conditions AFTER hooks
+  if (!metrics) return null;
 
   const isOverfitting =
     metrics.accPracticed > PRACTICED_THRESHOLD &&
     metrics.accUnseen < UNSEEN_THRESHOLD;
 
-  // 🔹 Identify unseen questions
-  const attemptedIds = history.map((h) => h.id);
-
-  const stressTestQuestions = useMemo(() => {
-    return questions.filter(
-      (q) =>
-        !attemptedIds.includes(q.id) ||
-        q.isMutated === true // optional flag if you add mutations later
-    );
-  }, [questions, history]);
-
   if (!isOverfitting) return null;
 
   return (
     <div className="mt-10">
-      {/* 🔥 STRESS TEST HEADER */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="flex items-center gap-2 text-xl font-black text-red-600">
           <ShieldAlert />
@@ -45,19 +46,26 @@ const StressTestPractice = ({ questions, history, metrics, onSolve }) => {
           onClick={() => setStressMode(!stressMode)}
           className="px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white"
         >
-          {stressMode ? "Exit Stress Test" : "Enter Stress Test Mode"}
+          {stressMode ? "Exit Stress Test" : "Enter Stress Test"}
         </button>
       </div>
 
-      {!stressMode ? (
+      {!stressMode && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-          Your practiced accuracy is high, but performance drops on unseen
-          problems. Stress Test Mode unlocks only novel questions to improve
-          generalization.
+          High practiced accuracy with low unseen accuracy detected.
+          Stress Test unlocks novel problems to improve generalization.
         </div>
-      ) : (
+      )}
+
+      {stressMode && stressQuestions.length === 0 && (
+        <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-700 font-semibold">
+          🎉 All unseen generalization problems completed.
+        </div>
+      )}
+
+      {stressMode && stressQuestions.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {stressTestQuestions.map((q, index) => (
+          {stressQuestions.map((q, index) => (
             <motion.div
               key={q.id}
               initial={{ opacity: 0, y: 20 }}
@@ -71,14 +79,14 @@ const StressTestPractice = ({ questions, history, metrics, onSolve }) => {
 
               <h3 className="font-bold text-slate-800">{q.title}</h3>
               <p className="text-xs text-slate-400 mt-1">
-                {q.topic} · Unseen Variant
+                {q.topic} · Unseen
               </p>
 
               <button
                 onClick={() => onSolve(q)}
                 className="mt-4 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold"
               >
-                Solve Stress Test
+                Solve Stress Question
               </button>
             </motion.div>
           ))}
